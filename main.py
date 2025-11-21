@@ -289,6 +289,21 @@ class RAGSystem:
 # Globalna instancja systemu RAG
 rag_system = None
 
+# ==================== Inicjalizacja przy starcie aplikacji ====================
+
+@app.on_event("startup")
+async def startup_event():
+    """Inicjalizuje system RAG przy starcie aplikacji"""
+    global rag_system
+    try:
+        logger.info("Inicjalizacja systemu RAG przy starcie aplikacji...")
+        rag_system = RAGSystem()
+        logger.info("✅ System RAG zainicjalizowany")
+    except Exception as e:
+        logger.error(f"❌ Błąd inicjalizacji RAG: {e}", exc_info=True)
+        logger.error("Sprawdź czy masz klucz API w zmiennych środowiskowych")
+        # Nie przerywamy startu aplikacji - pozwalamy na działanie bez RAG
+
 # ==================== Przechowywanie danych FAQ ====================
 
 FAQ_FILE = "faq_data.json"
@@ -407,6 +422,13 @@ async def ask_question(question: Question):
 
         if len(question.question) > 1000:
             raise HTTPException(status_code=400, detail="Pytanie jest zbyt długie (max 1000 znaków)")
+
+        # Sprawdź czy system RAG jest zainicjalizowany
+        if rag_system is None:
+            raise HTTPException(
+                status_code=503, 
+                detail="System RAG nie jest jeszcze gotowy. Sprawdź logi aplikacji."
+            )
 
         # Pobierz odpowiedź z systemu RAG
         result = rag_system.search(question.question)
