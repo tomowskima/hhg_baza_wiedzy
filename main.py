@@ -248,7 +248,7 @@ class RAGSystem:
 
         try:
             # Wykonaj zapytanie
-            result = self.qa_chain({"query": question})
+            result = self.qa_chain.invoke({"query": question})
 
             # Wyodrębnij źródła
             sources = []
