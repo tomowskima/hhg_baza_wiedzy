@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List, Optional
+from contextlib import asynccontextmanager
 import json
 import os
 from datetime import datetime
@@ -32,7 +33,34 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="RAG System API", version="2.0.0")
+# Globalna instancja systemu RAG
+rag_system = None
+
+# ==================== Inicjalizacja przy starcie aplikacji ====================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Zarządza cyklem życia aplikacji - inicjalizuje RAG przy starcie"""
+    global rag_system
+    # Startup
+    try:
+        logger.info("Inicjalizacja systemu RAG przy starcie aplikacji...")
+        rag_system = RAGSystem()
+        logger.info("✅ System RAG zainicjalizowany")
+    except Exception as e:
+        logger.error(f"❌ Błąd inicjalizacji RAG: {e}", exc_info=True)
+        logger.error("Sprawdź czy masz klucz API w zmiennych środowiskowych")
+        # Nie przerywamy startu aplikacji - pozwalamy na działanie bez RAG
+    
+    yield
+    
+    # Shutdown (opcjonalnie - cleanup)
+
+app = FastAPI(
+    title="RAG System API", 
+    version="2.0.0",
+    lifespan=lifespan
+)
 
 # CORS - pozwala na komunikację z frontendem
 app.add_middleware(
@@ -285,24 +313,6 @@ class RAGSystem:
 
         self.initialize()
         logger.info("Baza wektorowa zresetowana")
-
-# Globalna instancja systemu RAG
-rag_system = None
-
-# ==================== Inicjalizacja przy starcie aplikacji ====================
-
-@app.on_event("startup")
-async def startup_event():
-    """Inicjalizuje system RAG przy starcie aplikacji"""
-    global rag_system
-    try:
-        logger.info("Inicjalizacja systemu RAG przy starcie aplikacji...")
-        rag_system = RAGSystem()
-        logger.info("✅ System RAG zainicjalizowany")
-    except Exception as e:
-        logger.error(f"❌ Błąd inicjalizacji RAG: {e}", exc_info=True)
-        logger.error("Sprawdź czy masz klucz API w zmiennych środowiskowych")
-        # Nie przerywamy startu aplikacji - pozwalamy na działanie bez RAG
 
 # ==================== Przechowywanie danych FAQ ====================
 
