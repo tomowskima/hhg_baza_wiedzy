@@ -130,12 +130,14 @@ class RAGSystem:
         if not os.path.exists(PDF_FOLDER):
             os.makedirs(PDF_FOLDER)
             logger.warning(f"Utworzono folder {PDF_FOLDER} - dodaj pliki PDF!")
+            self.vectorstore = None
             return
 
         # Sprawdź czy są jakieś PDFy
         pdf_files = [f for f in os.listdir(PDF_FOLDER) if f.endswith('.pdf')]
         if not pdf_files:
             logger.warning(f"Brak plików PDF w folderze {PDF_FOLDER}")
+            self.vectorstore = None
             return
 
         logger.info(f"Znaleziono {len(pdf_files)} plików PDF")
@@ -176,6 +178,7 @@ class RAGSystem:
             logger.info("✅ Baza wektorowa utworzona i zapisana")
         else:
             logger.warning("Brak fragmentów do indeksowania")
+            self.vectorstore = None
 
     def load_vectorstore(self):
         """Ładuje istniejącą bazę wektorową"""
@@ -190,6 +193,7 @@ class RAGSystem:
         
         if not self.vectorstore:
             logger.warning("Brak bazy wektorowej - używam trybu mock")
+            self.qa_chain = None
             return
 
         # Polski prompt dostosowany do dokumentów HR z lepszymi zasadami dla kompendium
@@ -265,7 +269,7 @@ class RAGSystem:
             }
 
         except Exception as e:
-            logger.error(f"Błąd podczas wyszukiwania: {e}")
+            logger.error(f"Błąd podczas wyszukiwania: {e}", exc_info=True)
             return {
                 "answer": f"Wystąpił błąd podczas przetwarzania pytania: {str(e)}",
                 "sources": []
