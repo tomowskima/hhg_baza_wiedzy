@@ -31,6 +31,11 @@ Thumbs.db
 # Generated files
 faq_data.json
 
+# Documents - keep PDFs in repo (like cv_creator)
+# Only ignore generated files, not the PDFs themselves
+documents/.ingest_state.json
+documents/ingested_chunks.json
+
 # Logs
 *.log
 
