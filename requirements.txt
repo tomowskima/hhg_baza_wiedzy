@@ -1,0 +1,19 @@
+# Core
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+python-multipart==0.0.6
+
+# RAG Components
+langchain==0.2.16
+langchain-community==0.2.16
+langchain-openai==0.1.25
+langchain-chroma==0.1.3
+openai>=1.40.0,<1.50.0
+chromadb==0.4.22
+pypdf==3.17.4
+python-dotenv==1.0.0
+
+# Embeddings i text processing
+tiktoken>=0.7
+sentence-transformers==2.2.2

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Head Hunter Groups - Baza Wiedzy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        /* Sekcja pytania */
+        .question-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        #questionInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        #questionInput:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        #sendButton {
+            padding: 12px 30px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #sendButton:hover {
+            background: #357abd;
+        }
+
+        #sendButton:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Sekcja odpowiedzi */
+        .answer-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            min-height: 150px;
+        }
+
+        .answer-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        #answerContent {
+            color: #555;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4a90e2;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Sekcja FAQ */
+        .faq-section {
+            margin-top: 40px;
+        }
+
+        .faq-header {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .faq-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .faq-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .faq-question {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            padding-right: 30px;
+        }
+
+        .faq-answer {
+            color: #7f8c8d;
+            font-size: 14px;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .faq-count {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #4a90e2;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .no-faq {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 40px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        /* Responsywność */
+        @media (max-width: 768px) {
+            .faq-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            #sendButton {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Zadaj pytanie Head Hunter Groups – natychmiastowa odpowiedź z naszej bazy wiedzy</h1>
+            <p class="subtitle">Napisz pytanie dotyczące rekrutacji, kariery, rynku pracy lub współpracy z Head Hunter Groups. Nasz asystent przeszuka bazę wiedzy i wyświetli najlepsze odpowiedzi.</p>
+        </header>
+
+        <div class="question-section">
+            <label for="questionInput" style="display: block; margin-bottom: 10px; font-weight: 600; color: #2c3e50;">Twoje pytanie</label>
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="questionInput" 
+                    placeholder="Wpisz swoje pytanie..."
+                    autocomplete="off"
+                >
+                <button id="sendButton">Wyślij</button>
+            </div>
+        </div>
+
+        <div class="answer-section">
+            <div class="answer-label">Odpowiedź:</div>
+            <div class="loading" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: #7f8c8d;">Przeszukuję dokumenty...</p>
+            </div>
+            <div id="answerContent">Tutaj pojawi się odpowiedź na Twoje pytanie.</div>
+        </div>
+
+        <div class="faq-section">
+            <h2 class="faq-header">Najczęściej zadawane pytania</h2>
+            <div id="faqGrid" class="faq-grid">
+                <div class="no-faq">Brak często zadawanych pytań. Zadaj pierwsze pytanie!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Konfiguracja
+        const API_URL = 'http://localhost:8000'; // Zmień na właściwy URL po deploymencie
+        
+        // Stan aplikacji
+        let isLoading = false;
+        let faqData = [];
+
+        // Elementy DOM
+        const questionInput = document.getElementById('questionInput');
+        const sendButton = document.getElementById('sendButton');
+        const answerContent = document.getElementById('answerContent');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const faqGrid = document.getElementById('faqGrid');
+
+        // Funkcja wysyłania pytania
+        async function sendQuestion() {
+            const question = questionInput.value.trim();
+            
+            if (!question) {
+                alert('Proszę wpisać pytanie');
+                return;
+            }
+
+            if (isLoading) return;
+
+            isLoading = true;
+            sendButton.disabled = true;
+            loadingIndicator.classList.add('active');
+            answerContent.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_URL}/api/question`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: question })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Błąd serwera');
+                }
+
+                const data = await response.json();
+                
+                // Wyświetl odpowiedź
+                answerContent.textContent = data.answer;
+                answerContent.style.display = 'block';
+                
+                // Odśwież FAQ jeśli zostały zaktualizowane
+                if (data.updated_faq) {
+                    await loadFAQ();
+                }
+
+            } catch (error) {
+                console.error('Błąd:', error);
+                answerContent.textContent = 'Wystąpił błąd podczas przetwarzania pytania. Spróbuj ponownie.';
+                answerContent.style.display = 'block';
+            } finally {
+                isLoading = false;
+                sendButton.disabled = false;
+                loadingIndicator.classList.remove('active');
+            }
+        }
+
+        // Funkcja ładowania FAQ
+        async function loadFAQ() {
+            try {
+                const response = await fetch(`${API_URL}/api/faq`);
+                if (!response.ok) throw new Error('Błąd ładowania FAQ');
+                
+                faqData = await response.json();
+                renderFAQ();
+            } catch (error) {
+                console.error('Błąd ładowania FAQ:', error);
+            }
+        }
+
+        // Funkcja renderowania FAQ
+        function renderFAQ() {
+            if (faqData.length === 0) {
+                faqGrid.innerHTML = '<div class="no-faq">Brak często zadawanych pytań. Zadaj pierwsze pytanie!</div>';
+                return;
+            }
+
+            faqGrid.innerHTML = faqData.map((item, index) => `
+                <div class="faq-card" onclick="loadFAQAnswer('${encodeURIComponent(item.question)}')">
+                    <div class="faq-count">${item.count}</div>
+                    <div class="faq-question">${item.question}</div>
+                    <div class="faq-answer">${item.answer}</div>
+                </div>
+            `).join('');
+        }
+
+        // Funkcja ładowania odpowiedzi z FAQ
+        function loadFAQAnswer(encodedQuestion) {
+            const question = decodeURIComponent(encodedQuestion);
+            questionInput.value = question;
+            sendQuestion();
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendQuestion);
+        
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendQuestion();
+            }
+        });
+
+        // Załaduj FAQ przy starcie
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFAQ();
+        });
+    </script>
+</body>
+</html>

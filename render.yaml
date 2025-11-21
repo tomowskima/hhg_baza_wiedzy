@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: rag-system
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-3.5-turbo
+      - key: EMBEDDING_MODEL
+        value: text-embedding-3-small
+      - key: PDF_FOLDER
+        value: documents/
+      - key: CHROMA_PERSIST_DIRECTORY
+        value: ./chroma_db
+      - key: CHUNK_SIZE
+        value: "500"
+      - key: CHUNK_OVERLAP
+        value: "100"
+      - key: MAX_SEARCH_RESULTS
+        value: "8"
+      - key: CHAIN_TYPE
+        value: stuff
+
