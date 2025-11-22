@@ -20,27 +20,36 @@ from dotenv import load_dotenv
 import openai
 
 # Workaround dla problemu z proxies w openai 1.40.0 + langchain-openai
-# Problem jest w SyncHttpxClientWrapper, więc patchujemy go bezpośrednio
+# Problem jest w SyncHttpxClientWrapper i AsyncHttpxClientWrapper, więc patchujemy oba
 try:
-    from openai._base_client import SyncHttpxClientWrapper
-    _original_sync_wrapper_init = SyncHttpxClientWrapper.__init__
+    from openai._base_client import SyncHttpxClientWrapper, AsyncHttpxClientWrapper
     
+    # Patch dla SyncHttpxClientWrapper (OpenAI)
+    _original_sync_wrapper_init = SyncHttpxClientWrapper.__init__
     def _patched_sync_wrapper_init(self, *args, **kwargs):
-        # Usuń proxies z kwargs, jeśli istnieje
         kwargs.pop('proxies', None)
         return _original_sync_wrapper_init(self, *args, **kwargs)
-    
     SyncHttpxClientWrapper.__init__ = _patched_sync_wrapper_init
-except (ImportError, AttributeError):
-    # Jeśli nie możemy zaimportować, próbujemy patchować OpenAI.__init__
-    _original_openai_init = openai.OpenAI.__init__
     
+    # Patch dla AsyncHttpxClientWrapper (AsyncOpenAI)
+    _original_async_wrapper_init = AsyncHttpxClientWrapper.__init__
+    def _patched_async_wrapper_init(self, *args, **kwargs):
+        kwargs.pop('proxies', None)
+        return _original_async_wrapper_init(self, *args, **kwargs)
+    AsyncHttpxClientWrapper.__init__ = _patched_async_wrapper_init
+except (ImportError, AttributeError):
+    # Fallback: patchujemy bezpośrednio OpenAI i AsyncOpenAI
+    _original_openai_init = openai.OpenAI.__init__
     def _patched_openai_init(self, *args, **kwargs):
-        # Usuń proxies z kwargs, jeśli istnieje
         kwargs.pop('proxies', None)
         return _original_openai_init(self, *args, **kwargs)
-    
     openai.OpenAI.__init__ = _patched_openai_init
+    
+    _original_async_openai_init = openai.AsyncOpenAI.__init__
+    def _patched_async_openai_init(self, *args, **kwargs):
+        kwargs.pop('proxies', None)
+        return _original_async_openai_init(self, *args, **kwargs)
+    openai.AsyncOpenAI.__init__ = _patched_async_openai_init
 
 # Import dla RAG
 from langchain_community.document_loaders import PyPDFLoader
