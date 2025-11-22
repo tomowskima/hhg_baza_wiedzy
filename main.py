@@ -17,6 +17,18 @@ from collections import defaultdict
 import hashlib
 import logging
 from dotenv import load_dotenv
+import openai
+
+# Workaround dla problemu z proxies w openai 1.40.0 + langchain-openai
+# Monkey patch: usuwamy proxies z parametrów przed przekazaniem do klienta OpenAI
+_original_openai_init = openai.OpenAI.__init__
+
+def _patched_openai_init(self, *args, **kwargs):
+    # Usuń proxies z kwargs, jeśli istnieje
+    kwargs.pop('proxies', None)
+    return _original_openai_init(self, *args, **kwargs)
+
+openai.OpenAI.__init__ = _patched_openai_init
 
 # Import dla RAG
 from langchain_community.document_loaders import PyPDFLoader
