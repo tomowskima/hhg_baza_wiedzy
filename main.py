@@ -125,19 +125,18 @@ class RAGSystem:
                 raise ValueError("OPENAI_API_KEY nie jest ustawione w .env")
             
             # Ustaw zmienną środowiskową dla OpenAI (langchain-openai czyta z env)
+            # NIE przekazujemy openai_api_key bezpośrednio - to powoduje problem z proxies
             os.environ["OPENAI_API_KEY"] = api_key
             
-            # Inicjalizacja embeddings - bezpośrednio używamy zmiennej środowiskowej
+            # Inicjalizacja embeddings - używamy tylko zmiennej środowiskowej
             self.embeddings = OpenAIEmbeddings(
-                model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
-                openai_api_key=api_key  # Explicitly pass API key to avoid proxies issue
+                model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
             )
 
             self.llm = ChatOpenAI(
                 model=OPENAI_MODEL,
                 temperature=0.1,  # Niska temperatura dla dokładności
-                max_tokens=1000,  # Więcej tokenów dla map_reduce
-                openai_api_key=api_key  # Explicitly pass API key to avoid proxies issue
+                max_tokens=1000  # Więcej tokenów dla map_reduce
             )
         except Exception as e:
             logger.error(f"Błąd inicjalizacji OpenAI: {e}")
