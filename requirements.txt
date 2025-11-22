@@ -8,8 +8,8 @@ python-multipart==0.0.6
 # Updated to newer versions that are compatible and fix proxies error
 langchain==0.3.0
 langchain-community==0.3.0
-# langchain-openai 0.2.0+ is compatible with langchain 0.3.0 and fixes proxies error
-langchain-openai==0.2.0
+# langchain-openai 0.2.0+ is compatible with langchain 0.3.0 - use latest patch version to fix proxies error
+langchain-openai>=0.2.0,<0.3.0
 # langchain-chroma 0.1.4+ is compatible with langchain 0.3.0 (requires langchain-core>=0.3.0)
 langchain-chroma==0.1.4
 # openai 1.40.0+ required by langchain-openai 0.2.0+
