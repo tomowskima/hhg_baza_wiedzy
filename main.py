@@ -20,23 +20,16 @@ from dotenv import load_dotenv
 import openai
 
 # Workaround dla problemu z proxies w openai 1.40.0 + langchain-openai
-# Monkey patch: usuwamy proxies z parametrów przed przekazaniem do klienta OpenAI
-# Musimy patchować zarówno OpenAI.__init__ jak i SyncHttpxClientWrapper.__init__
+# Monkey patch: ustawiamy proxies na None zamiast usuwać (bo może być wymagany)
 _original_openai_init = openai.OpenAI.__init__
-_original_base_client_init = openai._base_client.BaseClient.__init__
 
 def _patched_openai_init(self, *args, **kwargs):
-    # Usuń proxies z kwargs, jeśli istnieje
-    kwargs.pop('proxies', None)
+    # Ustaw proxies na None, jeśli istnieje (zamiast usuwać)
+    if 'proxies' in kwargs:
+        kwargs['proxies'] = None
     return _original_openai_init(self, *args, **kwargs)
 
-def _patched_base_client_init(self, *args, **kwargs):
-    # Usuń proxies z kwargs, jeśli istnieje
-    kwargs.pop('proxies', None)
-    return _original_base_client_init(self, *args, **kwargs)
-
 openai.OpenAI.__init__ = _patched_openai_init
-openai._base_client.BaseClient.__init__ = _patched_base_client_init
 
 # Import dla RAG
 from langchain_community.document_loaders import PyPDFLoader
