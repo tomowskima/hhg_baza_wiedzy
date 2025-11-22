@@ -272,6 +272,7 @@
         // Konfiguracja
         // Używamy względnego URL - działa zarówno lokalnie jak i na Render
         const API_URL = window.location.origin;
+        console.log('API URL:', API_URL); // Debug
         
         // Stan aplikacji
         let isLoading = false;
@@ -301,6 +302,7 @@
             answerContent.style.display = 'none';
 
             try {
+                console.log('Wysyłam pytanie do:', `${API_URL}/api/question`); // Debug
                 const response = await fetch(`${API_URL}/api/question`, {
                     method: 'POST',
                     headers: {
@@ -308,6 +310,7 @@
                     },
                     body: JSON.stringify({ question: question })
                 });
+                console.log('Otrzymano odpowiedź:', response.status, response.statusText); // Debug
 
                 if (!response.ok) {
                     throw new Error('Błąd serwera');
