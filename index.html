@@ -270,7 +270,8 @@
 
     <script>
         // Konfiguracja
-        const API_URL = 'http://localhost:8000'; // Zmień na właściwy URL po deploymencie
+        // Używamy względnego URL - działa zarówno lokalnie jak i na Render
+        const API_URL = window.location.origin;
         
         // Stan aplikacji
         let isLoading = false;
