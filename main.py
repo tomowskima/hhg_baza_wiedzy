@@ -496,8 +496,10 @@ async def ask_question(question: Question):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Błąd podczas przetwarzania pytania: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Błąd podczas przetwarzania pytania: {e}", exc_info=True)
+        logger.error(f"Typ błędu: {type(e).__name__}")
+        logger.error(f"Traceback: {e.__traceback__}")
+        raise HTTPException(status_code=500, detail=f"Błąd podczas przetwarzania pytania: {str(e)}")
 
 @app.get("/api/faq", response_model=List[FAQItem])
 async def get_faq():
