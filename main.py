@@ -425,10 +425,14 @@ def update_faq(question: str, answer: str) -> bool:
 
     if len(sorted_items) > MAX_FAQ_ITEMS:
         items_to_keep = dict(sorted_items[:MAX_FAQ_ITEMS])
+        # Sprawdź czy nowe pytanie jest w top 9
+        if question_hash not in items_to_keep:
+            logger.warning(f"⚠️ Nowe pytanie (hash={question_hash}) zostało usunięte, bo ma count=1 i jest poza top {MAX_FAQ_ITEMS}")
         faq_data = items_to_keep
     else:
         faq_data = dict(sorted_items)
-
+    
+    logger.info(f"💾 Zapisuję {len(faq_data)} pytań, hash '{question_hash}' w danych: {question_hash in faq_data}")
     save_faq_data(faq_data)
 
     new_position = get_faq_position(faq_data, question_hash)
