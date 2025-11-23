@@ -18,6 +18,8 @@ import hashlib
 import logging
 from dotenv import load_dotenv
 import openai
+import fcntl
+import time
 
 # Workaround dla problemu z proxies w openai 1.40.0 + langchain-openai
 # Problem jest w SyncHttpxClientWrapper i AsyncHttpxClientWrapper, więc patchujemy oba
@@ -361,29 +363,60 @@ FAQ_FILE = "faq_data.json"
 MAX_FAQ_ITEMS = 9
 
 def load_faq_data():
-    """Ładuje dane FAQ z pliku"""
+    """Ładuje dane FAQ z pliku z blokadą"""
     if os.path.exists(FAQ_FILE):
-        try:
-            with open(FAQ_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                logger.debug(f"📖 FAQ załadowane z {FAQ_FILE}, liczba pytań: {len(data)}")
-                return data
-        except Exception as e:
-            logger.error(f"❌ Błąd odczytu FAQ z {FAQ_FILE}: {e}")
-            return {}
+        max_retries = 5
+        retry_delay = 0.1
+        for attempt in range(max_retries):
+            try:
+                with open(FAQ_FILE, 'r', encoding='utf-8') as f:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_SH)  # Shared lock (read)
+                    try:
+                        data = json.load(f)
+                        logger.debug(f"📖 FAQ załadowane z {FAQ_FILE}, liczba pytań: {len(data)}")
+                        return data
+                    finally:
+                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)  # Unlock
+            except (IOError, OSError) as e:
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                    continue
+                logger.error(f"❌ Błąd odczytu FAQ z {FAQ_FILE} po {max_retries} próbach: {e}")
+                return {}
+            except Exception as e:
+                logger.error(f"❌ Błąd odczytu FAQ z {FAQ_FILE}: {e}")
+                return {}
     else:
         logger.debug(f"📖 Plik {FAQ_FILE} nie istnieje, zwracam pusty słownik")
     return {}
 
 def save_faq_data(data):
-    """Zapisuje dane FAQ do pliku"""
-    try:
-        with open(FAQ_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        logger.info(f"✅ FAQ zapisane do {FAQ_FILE}, liczba pytań: {len(data)}")
-    except Exception as e:
-        logger.error(f"❌ Błąd zapisu FAQ do {FAQ_FILE}: {e}", exc_info=True)
-        raise
+    """Zapisuje dane FAQ do pliku z blokadą"""
+    max_retries = 5
+    retry_delay = 0.1
+    for attempt in range(max_retries):
+        try:
+            with open(FAQ_FILE, 'w', encoding='utf-8') as f:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)  # Exclusive lock (write)
+                try:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                    f.flush()  # Wymuś zapis do dysku
+                    os.fsync(f.fileno())  # Synchronizuj z systemem plików
+                    logger.info(f"✅ FAQ zapisane do {FAQ_FILE}, liczba pytań: {len(data)}")
+                    return
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)  # Unlock
+        except (IOError, OSError) as e:
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+                retry_delay *= 2
+                continue
+            logger.error(f"❌ Błąd zapisu FAQ do {FAQ_FILE} po {max_retries} próbach: {e}", exc_info=True)
+            raise
+        except Exception as e:
+            logger.error(f"❌ Błąd zapisu FAQ do {FAQ_FILE}: {e}", exc_info=True)
+            raise
 
 def get_question_hash(question: str) -> str:
     """Tworzy hash pytania dla identyfikacji podobnych pytań"""
