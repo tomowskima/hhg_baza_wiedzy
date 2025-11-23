@@ -365,15 +365,25 @@ def load_faq_data():
     if os.path.exists(FAQ_FILE):
         try:
             with open(FAQ_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
+                data = json.load(f)
+                logger.debug(f"📖 FAQ załadowane z {FAQ_FILE}, liczba pytań: {len(data)}")
+                return data
+        except Exception as e:
+            logger.error(f"❌ Błąd odczytu FAQ z {FAQ_FILE}: {e}")
             return {}
+    else:
+        logger.debug(f"📖 Plik {FAQ_FILE} nie istnieje, zwracam pusty słownik")
     return {}
 
 def save_faq_data(data):
     """Zapisuje dane FAQ do pliku"""
-    with open(FAQ_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    try:
+        with open(FAQ_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        logger.info(f"✅ FAQ zapisane do {FAQ_FILE}, liczba pytań: {len(data)}")
+    except Exception as e:
+        logger.error(f"❌ Błąd zapisu FAQ do {FAQ_FILE}: {e}", exc_info=True)
+        raise
 
 def get_question_hash(question: str) -> str:
     """Tworzy hash pytania dla identyfikacji podobnych pytań"""
@@ -386,11 +396,14 @@ def update_faq(question: str, answer: str) -> bool:
     """Aktualizuje FAQ i zwraca True jeśli lista FAQ się zmieniła"""
     faq_data = load_faq_data()
     question_hash = get_question_hash(question)
+    
+    logger.info(f"📝 Aktualizacja FAQ: pytanie='{question[:50]}...', hash={question_hash}")
 
     if question_hash in faq_data:
         faq_data[question_hash]['count'] += 1
         faq_data[question_hash]['last_asked'] = datetime.now().isoformat()
         old_position = get_faq_position(faq_data, question_hash)
+        logger.info(f"✅ FAQ zaktualizowane: count={faq_data[question_hash]['count']}, pozycja={old_position}")
     else:
         faq_data[question_hash] = {
             'question': question,
@@ -400,6 +413,7 @@ def update_faq(question: str, answer: str) -> bool:
             'question_hash': question_hash
         }
         old_position = None
+        logger.info(f"✅ Nowe FAQ dodane: count=1")
 
     sorted_items = sorted(
         faq_data.items(),
@@ -506,6 +520,7 @@ async def get_faq():
     """Pobiera listę najczęściej zadawanych pytań"""
     try:
         faq_data = load_faq_data()
+        logger.debug(f"📊 GET /api/faq: załadowano {len(faq_data)} pytań z pliku")
 
         sorted_items = sorted(
             faq_data.values(),
@@ -516,12 +531,33 @@ async def get_faq():
         faq_list = []
         for item in sorted_items[:MAX_FAQ_ITEMS]:
             faq_list.append(FAQItem(**item))
-
+        
+        logger.info(f"📊 GET /api/faq: zwracam {len(faq_list)} pytań (max {MAX_FAQ_ITEMS})")
         return faq_list
 
     except Exception as e:
-        logger.error(f"Błąd podczas pobierania FAQ: {e}")
+        logger.error(f"Błąd podczas pobierania FAQ: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Błąd wewnętrzny serwera")
+
+@app.get("/api/faq/debug")
+async def get_faq_debug():
+    """Endpoint debugowy do sprawdzenia zawartości FAQ"""
+    try:
+        faq_data = load_faq_data()
+        file_exists = os.path.exists(FAQ_FILE)
+        file_size = os.path.getsize(FAQ_FILE) if file_exists else 0
+        
+        return {
+            "file_exists": file_exists,
+            "file_path": os.path.abspath(FAQ_FILE),
+            "file_size": file_size,
+            "faq_count": len(faq_data),
+            "faq_data": faq_data,
+            "writable": os.access(FAQ_FILE if file_exists else ".", os.W_OK)
+        }
+    except Exception as e:
+        logger.error(f"Błąd w /api/faq/debug: {e}", exc_info=True)
+        return {"error": str(e)}
 
 @app.post("/api/reset")
 async def reset_database():
