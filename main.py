@@ -398,6 +398,8 @@ def update_faq(question: str, answer: str) -> bool:
     question_hash = get_question_hash(question)
     
     logger.info(f"📝 Aktualizacja FAQ: pytanie='{question[:50]}...', hash={question_hash}")
+    logger.info(f"📊 Załadowane FAQ: {len(faq_data)} pytań, klucze: {list(faq_data.keys())[:3]}...")
+    logger.info(f"🔍 Szukam hash '{question_hash}' w FAQ: {question_hash in faq_data}")
 
     if question_hash in faq_data:
         faq_data[question_hash]['count'] += 1
